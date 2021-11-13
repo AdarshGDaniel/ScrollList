@@ -1,0 +1,151 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Convert Excel to HTML Table using JavaScript</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container centre">
+    	<div id="entry" class="card show">
+    		<div class="card-header"><b>Select Excel File</b></div>
+    		<div class="card-body">
+    			
+                <input type="file" id="excel_file" />
+
+    		</div>
+    	</div>
+        <button id="key-sel" onclick="select()">Canculate</button>
+        <div class="outer">
+            <div id="excel_data" class="mt-5 table-space"></div>
+        </div>
+    </div>
+    <script>
+        function numberWithCommas(x) {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        const excel_file = document.getElementById('excel_file');
+        
+        excel_file.addEventListener('change', (event) => {
+        
+            if(!['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'].includes(event.target.files[0].type))
+            {
+                document.getElementById('excel_data').innerHTML = '<div class="alert alert-danger">Only .xlsx or .xls file format are allowed</div>';
+        
+                excel_file.value = '';
+        
+                return false;
+            }
+        
+            var reader = new FileReader();
+        
+            reader.readAsArrayBuffer(event.target.files[0]);
+        
+            reader.onload = function(event){
+                document.getElementById('entry').classList.remove('show');
+                document.getElementById('entry').classList.add('hide');
+        
+                var data = new Uint8Array(reader.result);
+        
+                var work_book = XLSX.read(data, {type:'array'});
+        
+                var sheet_name = work_book.SheetNames;
+        
+                var sheet_data = XLSX.utils.sheet_to_json(work_book.Sheets[sheet_name[0]], {header:1});
+        
+                if(sheet_data.length > 0)
+                {
+                    var table_output = '<table id="mytable" class="table">';
+        
+                    for(var row = 0; row < sheet_data.length; row++)
+                    {
+        
+                        table_output += '<tr>';
+        
+                        for(var cell = 0; cell < sheet_data[row].length; cell++)
+                        {
+                            table_output += '<td class="show">'+numberWithCommas(sheet_data[row][cell])+'</td>';
+                            //table_output += '<td class="show">'+sheet_data[row][cell]+'</td>';
+                        }
+        
+                        table_output += '</tr>';
+        
+                    }
+        
+                    table_output += '</table>';
+        
+                    document.getElementById('excel_data').innerHTML = table_output;
+                }
+        
+                excel_file.value = '';
+        
+            }
+        
+        });
+        
+        
+
+
+        function select(){
+            document.getElementById('key-sel').classList.add('hide');
+            var mytab = document.getElementById('mytable');
+            var len = mytab.rows.length;
+            var count=0;
+            loop();
+            function loop(){
+                if(count<len){
+                    mytab.rows.item(count).classList.add('selected');
+                    document.onkeydown = checkKey;
+                    function checkKey(e) {
+                        e = e || window.event;
+                        if (e.keyCode == '38') {
+                            if (count>0){
+                                console.log(mytab.rows.item(count));
+                                mytab.rows.item(count).classList.remove('selected');
+                                if (mytab.rows.item(count).innerHTML){
+                                    document.getElementById('excel_data').scrollBy(0, -50);
+                                }
+                                count--;
+                                loop();
+                            }
+                        }
+                        if (e.keyCode == '40') {
+                            if(count<len){
+                                mytab.rows.item(count).classList.remove('selected');
+                                if (mytab.rows.item(count).innerHTML){
+                                    console.log(mytab.rows.item(count).innerHTML);
+                                    if(count>2){
+                                        document.getElementById('excel_data').scrollBy(0, 50);
+                                    }
+                                    else{
+                                        document.getElementById('excel_data').scrollBy(0, 5);
+                                    }
+                                }
+                                if(count+1<len){
+                                    count++;
+                                }
+    
+                                loop();
+                            }
+                        }
+                    }
+                }
+                else if(count>len){
+                    count = len;
+                }
+                else if(count<0){
+                    count = 0;
+                }
+            }
+        }
+
+        </script>
+</body>
+</html>
+
+
+
